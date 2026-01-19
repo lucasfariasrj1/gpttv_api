@@ -1,11 +1,13 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { z } from "zod";
-import { prisma } from "../lib/prisma";
-import { rechargeQueue } from "../lib/queue";
+
+import { AppError } from "../errors/AppError";
+import { prisma } from "../infra/database";
+import { executionQueue } from "../infra/queue";
 
 const rechargeSchema = z.object({
   target_username: z.string().min(1),
-  amount: z.number().positive(),
+  amount: z.coerce.number().positive(),
 });
 
 interface AuthenticatedRequest extends Request {
@@ -15,83 +17,73 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-export const requestRecharge = async (req: AuthenticatedRequest, res: Response) => {
+export const requestRecharge = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const user = req.user;
   if (!user) {
-    return res.status(401).json({ message: "Unauthorized" });
+    throw new AppError("Unauthorized", 401);
   }
 
-  const parsed = rechargeSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({
-      message: "Invalid request",
-      errors: parsed.error.flatten(),
-    });
-  }
+  const { target_username, amount } = rechargeSchema.parse(req.body);
 
-  const { target_username, amount } = parsed.data;
-
-  try {
-    const transactionRecord = await prisma.$transaction(async (tx) => {
-      const reseller = await tx.user.findUnique({
-        where: { id: user.id },
-        select: { balance: true },
-      });
-
-      if (!reseller) {
-        throw new Error("User not found");
-      }
-
-      if (reseller.balance.lessThan(amount)) {
-        return null;
-      }
-
-      await tx.user.update({
-        where: { id: user.id },
-        data: {
-          balance: {
-            decrement: amount,
-          },
-        },
-      });
-
-      return tx.transaction.create({
-        data: {
-          userId: user.id,
-          type: "SPEND",
-          amount,
-          description: `Recharge for ${target_username}`,
-          status: "PENDING",
-        },
-      });
+  const transactionRecord = await prisma.$transaction(async (tx) => {
+    const reseller = await tx.user.findUnique({
+      where: { id: user.id },
+      select: { balance: true, tenantId: true },
     });
 
-    if (!transactionRecord) {
-      return res.status(400).json({ message: "Insufficient balance" });
+    if (!reseller) {
+      throw new AppError("User not found", 404);
     }
 
-    await rechargeQueue.add(
-      "recharge",
-      {
-        transactionId: transactionRecord.id,
-        userId: user.id,
-        targetUsername: target_username,
-        amount,
-      },
-      {
-        attempts: 3,
-        backoff: {
-          type: "exponential",
-          delay: 5000,
+    if (reseller.balance.lessThan(amount)) {
+      return null;
+    }
+
+    await tx.user.update({
+      where: { id: user.id },
+      data: {
+        balance: {
+          decrement: amount,
         },
       },
-    );
-
-    return res.status(202).json({
-      status: "PROCESSING",
-      transaction_id: transactionRecord.id,
     });
-  } catch (error) {
-    return res.status(500).json({ message: "Recharge request failed" });
+
+    return tx.transaction.create({
+      data: {
+        tenantId: reseller.tenantId,
+        userId: user.id,
+        type: "SPEND",
+        amount,
+        description: `Recharge for ${target_username}`,
+        status: "PENDING",
+      },
+    });
+  });
+
+  if (!transactionRecord) {
+    throw new AppError("Insufficient balance", 400);
   }
+
+  await executionQueue.add(
+    "execute-recharge",
+    {
+      tenantId: transactionRecord.tenantId,
+      targetUser: target_username,
+      amount,
+      transactionId: transactionRecord.id,
+      userId: user.id,
+    },
+    {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 5000,
+      },
+    },
+  );
+
+  res.status(202).json({
+    status: "PROCESSING",
+    transaction_id: transactionRecord.id,
+  });
 };

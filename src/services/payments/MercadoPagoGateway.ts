@@ -1,9 +1,9 @@
 import axios from "axios";
 import crypto from "crypto";
 
-import type { PaymentGatewayInterface, PaymentResponse, PaymentWebhookResult } from "./PaymentGatewayInterface";
+import type { IPaymentGateway, PaymentResponse, PaymentWebhookResult } from "./IPaymentGateway";
 
-export class MercadoPagoGateway implements PaymentGatewayInterface {
+export class MercadoPagoGateway implements IPaymentGateway {
   constructor(private readonly accessToken: string, private readonly webhookSecret?: string) {}
 
   async createPayment(input: {
@@ -66,7 +66,7 @@ export class MercadoPagoGateway implements PaymentGatewayInterface {
       throw new Error("Webhook inválido: payment id ausente.");
     }
 
-    const paymentResponse = await axios.get(`https://api.mercadopago.com/v1/payments/${data.data.id}`, {
+    const paymentResponse = await axios.get(`https://api.mercadopago.com/v1/payments/${data.data.id}` ,{
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
       },

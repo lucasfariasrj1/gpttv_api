@@ -17,7 +17,7 @@ export type PaymentWebhookResult = {
   metadata?: Record<string, string>;
 };
 
-export interface PaymentGatewayInterface {
+export interface IPaymentGateway {
   createPayment(input: {
     amount: number;
     description: string;

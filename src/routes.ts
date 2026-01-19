@@ -27,7 +27,7 @@ routes.post("/:tenantSlug/auth/register", resolveTenant, registerController); //
 
 // --- Rotas de Autenticação Global ---
 routes.post("/auth/login", loginController);
-routes.post("/auth/create-tenant", createTenantController);
+routes.post("/auth/register", createTenantController);
 
 // --- Rotas Protegidas (Requerem Token Logado) ---
 routes.post("/admin/config-payment", ensureAuthenticated, configPaymentController);

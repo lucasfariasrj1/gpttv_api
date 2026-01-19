@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { prisma } from "../infra/prisma";
+import { prisma } from "../infra/database";
 import { redis } from "../infra/redis";
 
 const TENANT_CACHE_PREFIX = "tenant:slug:";

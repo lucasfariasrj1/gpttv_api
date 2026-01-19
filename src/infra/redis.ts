@@ -1,5 +1,7 @@
 import Redis from "ioredis";
 
+import { env } from "../env";
+
 type RedisGlobal = typeof globalThis & {
   redis?: Redis;
 };
@@ -8,7 +10,7 @@ const globalForRedis = globalThis as RedisGlobal;
 
 export const redis =
   globalForRedis.redis ??
-  new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
+  new Redis(env.REDIS_URL, {
     maxRetriesPerRequest: null,
   });
 

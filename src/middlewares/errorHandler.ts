@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 
 import { AppError } from "../errors/AppError";
+import { logger } from "../infra/logger";
 
 export const errorHandler = (
   error: Error,
@@ -9,6 +10,8 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ): void => {
+  logger.error({ err: error }, "Unhandled error");
+
   if (error instanceof ZodError) {
     res.status(400).json({
       message: "Validation error",

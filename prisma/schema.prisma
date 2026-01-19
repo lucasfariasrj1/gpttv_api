@@ -31,6 +31,8 @@ model Tenant {
   logoUrl        String?   @map("logo_url")
   warezUsername  String?   @map("warez_username")
   warezPassword  String?   @map("warez_password")
+  monnifyToken   String?   @map("monnify_token")
+  monnifyWebhookSecret String? @map("monnify_webhook_secret")
   createdAt      DateTime  @default(now()) @map("created_at")
 
   users          User[]

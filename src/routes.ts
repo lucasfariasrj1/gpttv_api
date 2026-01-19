@@ -3,6 +3,7 @@ import { Router } from "express";
 // Imports dos Controllers (Verifique se os caminhos batem com seus arquivos)
 import { configPaymentController } from "./controllers/admin/configPaymentController";
 import { loginController } from "./controllers/auth/loginController";
+import { createTenantController } from "./controllers/auth/createTenantController";
 import { registerController } from "./controllers/auth/registerController"; // <--- Adicionado
 import { checkoutController } from "./controllers/checkoutController";      // <--- O que estava faltando
 import { requestRecharge } from "./controllers/rechargeController";
@@ -26,6 +27,7 @@ routes.post("/:tenantSlug/auth/register", resolveTenant, registerController); //
 
 // --- Rotas de Autenticação Global ---
 routes.post("/auth/login", loginController);
+routes.post("/auth/create-tenant", createTenantController);
 
 // --- Rotas Protegidas (Requerem Token Logado) ---
 routes.post("/admin/config-payment", ensureAuthenticated, configPaymentController);

@@ -9,6 +9,7 @@ const envSchema = z.object({
   MERCADO_PAGO_WEBHOOK_SECRET: z.string().min(1),
   MERCADO_PAGO_ACCESS_TOKEN: z.string().min(1).optional(),
   LOG_LEVEL: z.string().optional(),
+  JWT_SECRET: z.string().min(32),
 });
 
 export const env = envSchema.parse(process.env);

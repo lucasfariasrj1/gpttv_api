@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string(),
 });
 
 export const loginController = async (req: Request, res: Response): Promise<void> => {

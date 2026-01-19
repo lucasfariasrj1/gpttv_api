@@ -8,19 +8,14 @@ datasource db {
 }
 
 enum UserRole {
-  ADMIN_TENANT
-  SUB_RESELLER
-}
-
-enum OrderStatus {
-  PENDING
-  PAID
-  CANCELED
+  ADMIN
+  RESELLER
 }
 
 enum TransactionType {
-  CREDIT_IN
-  CREDIT_OUT
+  DEPOSIT
+  SPEND
+  REFUND
 }
 
 model Tenant {
@@ -43,61 +38,38 @@ model Tenant {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  tenantId  String   @map("tenant_id")
-  email     String
-  password  String
-  role      UserRole
-  balance   Decimal  @default(0)
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  role         UserRole      @default(RESELLER)
+  balance      Decimal       @default(0)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  transactions Transaction[]
 
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  orders    Order[]
-
-  @@unique([tenantId, email])
-  @@index([tenantId])
   @@map("users")
 }
 
-model Product {
-  id             String   @id @default(uuid())
-  tenantId       String   @map("tenant_id")
-  name           String
-  price          Decimal
-  creditsAmount  Int      @map("credits_amount")
-  active         Boolean  @default(true)
-
-  tenant         Tenant   @relation(fields: [tenantId], references: [id])
-
-  @@index([tenantId])
-  @@map("products")
-}
-
-model Order {
-  id           String       @id @default(uuid())
-  tenantId     String       @map("tenant_id")
-  userId       String       @map("user_id")
-  totalAmount  Decimal      @map("total_amount")
-  status       OrderStatus  @default(PENDING)
-  paymentId    String?      @map("payment_id")
-  createdAt    DateTime     @default(now()) @map("created_at")
-
-  tenant       Tenant       @relation(fields: [tenantId], references: [id])
-  user         User         @relation(fields: [userId], references: [id])
-  transactions Transaction[]
-
-  @@index([tenantId])
-  @@index([userId])
-  @@map("orders")
-}
-
 model Transaction {
-  id        String           @id @default(uuid())
-  orderId   String           @map("order_id")
-  type      TransactionType
-  createdAt DateTime         @default(now()) @map("created_at")
+  id          String            @id @default(uuid()) @db.Uuid
+  userId      String            @map("user_id") @db.Uuid
+  type        TransactionType
+  amount      Decimal
+  description String?
+  status      TransactionStatus @default(PENDING)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  user        User              @relation(fields: [userId], references: [id])
 
-  order     Order            @relation(fields: [orderId], references: [id])
-
-  @@index([orderId])
   @@map("transactions")
+}
+
+model ExternalLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  endpoint       String
+  requestPayload Json     @map("request_payload")
+  responseData   Json?    @map("response_data")
+  statusCode     Int?     @map("status_code")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("external_logs")
 }

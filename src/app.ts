@@ -12,9 +12,9 @@ import "./workers/paymentWorker";
 
 export const app = express();
 
-// Configuração do CORS
+// 3. Configuração correta do CORS
 app.use(cors({
-  origin: "*", // Permite acesso de qualquer lugar (ajuste em produção)
+  origin: "*", // Permite qualquer origem (ideal para dev). Em produção, coloque a URL do seu site.
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));

@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  RESELLER
+}
+
+enum TransactionType {
+  DEPOSIT
+  SPEND
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  role         UserRole      @default(RESELLER)
+  balance      Decimal       @default(0)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+model Transaction {
+  id          String            @id @default(uuid()) @db.Uuid
+  userId      String            @map("user_id") @db.Uuid
+  type        TransactionType
+  amount      Decimal
+  description String?
+  status      TransactionStatus @default(PENDING)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  user        User              @relation(fields: [userId], references: [id])
+
+  @@map("transactions")
+}
+
+model ExternalLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  endpoint       String
+  requestPayload Json     @map("request_payload")
+  responseData   Json?    @map("response_data")
+  statusCode     Int?     @map("status_code")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("external_logs")
+}

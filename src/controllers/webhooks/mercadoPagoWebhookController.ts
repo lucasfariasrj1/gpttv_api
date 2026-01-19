@@ -2,12 +2,13 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 
 import { AppError } from "../../errors/AppError";
+import { env } from "../../env";
 import { prisma } from "../../infra/database";
 import { MercadoPagoGateway } from "../../services/payments/MercadoPagoGateway";
 
 const gateway = new MercadoPagoGateway(
-  process.env.MERCADO_PAGO_ACCESS_TOKEN ?? "",
-  process.env.MERCADO_PAGO_WEBHOOK_SECRET,
+  env.MERCADO_PAGO_ACCESS_TOKEN ?? "",
+  env.MERCADO_PAGO_WEBHOOK_SECRET,
 );
 
 const mercadoPagoWebhookSchema = z.object({}).passthrough();

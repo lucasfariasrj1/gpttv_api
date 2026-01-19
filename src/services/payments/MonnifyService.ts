@@ -18,6 +18,30 @@ type MonnifyChargeInput = {
   metadata: Record<string, string>;
 };
 
+type MonnifyChargeSuccessResponse = {
+  requestSuccessful: true;
+  responseMessage?: string;
+  responseCode?: string;
+  responseBody?: {
+    paymentReference?: string;
+    transactionReference?: string;
+    qrCode?: string;
+    qrCodeBase64?: string;
+  };
+};
+
+type MonnifyChargeErrorResponse = {
+  requestSuccessful: false;
+  responseMessage?: string;
+  responseCode?: string;
+  responseBody?: {
+    errorCode?: string;
+    errorDescription?: string;
+  };
+};
+
+type MonnifyChargeResponse = MonnifyChargeSuccessResponse | MonnifyChargeErrorResponse;
+
 type MonnifyWebhookPayload = {
   eventType?: string;
   eventData?: {
@@ -39,7 +63,7 @@ export class MonnifyService implements IPaymentGateway {
     });
   }
 
-  async createCharge(input: MonnifyChargeInput): Promise<unknown> {
+  async createCharge(input: MonnifyChargeInput): Promise<MonnifyChargeResponse> {
     const response = await axios.post(`${MONNIFY_BASE_URL}/tenant/charges`, input, {
       headers: {
         Authorization: `Bearer ${this.tenantToken}`,
@@ -47,7 +71,7 @@ export class MonnifyService implements IPaymentGateway {
       },
     });
 
-    return response.data;
+    return response.data as MonnifyChargeResponse;
   }
 
   async createPayment(input: {
@@ -62,14 +86,7 @@ export class MonnifyService implements IPaymentGateway {
       metadata: input.metadata ?? {},
     });
 
-    const responseBody = response as {
-      responseBody?: {
-        paymentReference?: string;
-        transactionReference?: string;
-        qrCode?: string;
-        qrCodeBase64?: string;
-      };
-    };
+    const responseBody = response as MonnifyChargeResponse;
 
     return {
       paymentId:

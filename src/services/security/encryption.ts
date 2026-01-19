@@ -1,20 +1,18 @@
 import crypto from "crypto";
 
+import { env } from "../../env";
+
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 
 const getEncryptionKey = (): Buffer => {
-  const key = process.env.PAYMENT_ENCRYPTION_KEY;
+  const key = env.PAYMENT_ENCRYPTION_KEY;
 
-  if (!key) {
-    throw new Error("PAYMENT_ENCRYPTION_KEY não configurada.");
-  }
-
-  const keyBuffer = Buffer.from(key, "base64");
+  const keyBuffer = Buffer.from(key, "utf8");
 
   if (keyBuffer.length !== 32) {
-    throw new Error("PAYMENT_ENCRYPTION_KEY deve ser base64 com 32 bytes.");
+    throw new Error("PAYMENT_ENCRYPTION_KEY deve conter 32 caracteres.");
   }
 
   return keyBuffer;

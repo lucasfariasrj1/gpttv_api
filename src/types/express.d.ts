@@ -4,6 +4,10 @@ declare global {
   namespace Express {
     interface Request {
       tenant?: Tenant;
+      user?: {
+        id: string;
+        role: "ADMIN" | "RESELLER";
+      };
     }
   }
 }
